@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Greenshades UTM Builder</title>
+  <link rel="shortcut icon" href="https://go.greenshades.com/hubfs/greenshades-favicon.png">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&family=PT+Serif:wght@400;700&display=swap');
 
@@ -772,6 +773,7 @@
     let toastTimeout;
 
     const THEME_KEY = 'gs-utm-theme';
+    const mobileQuery = window.matchMedia('(max-width: 640px)');
 
     function setToggleIcon(theme) {
       if (!themeToggleIcon) return;
@@ -786,8 +788,13 @@
     }
 
     function initTheme() {
-      const stored = localStorage.getItem(THEME_KEY);
-      applyTheme(stored || 'dark');
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      const initialTheme = savedTheme || 'dark';
+      bodyEl.dataset.theme = initialTheme;
+      setToggleIcon(initialTheme);
+      if (!savedTheme) {
+        localStorage.setItem(THEME_KEY, initialTheme);
+      }
     }
 
     function normalizeValue(value) {
@@ -976,6 +983,17 @@
       }
     }
 
+    function updateTimeCellsForViewport() {
+      const useShort = mobileQuery.matches;
+      document.querySelectorAll('#history-body td:first-child').forEach((cell) => {
+        const full = cell.dataset.fullTime;
+        const short = cell.dataset.shortTime;
+        if (full && short) {
+          cell.textContent = useShort ? short : full;
+        }
+      });
+    }
+
     function addHistoryRowFromRecord(row, appendToBottom = false) {
       if (!row) return;
       if (historyBody.children.length === 1 && historyBody.querySelector('td')?.classList.contains('muted')) {
@@ -983,10 +1001,25 @@
       }
 
       const recordDate = row.created_at ? new Date(row.created_at) : new Date();
+      const fullTime = recordDate.toLocaleString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      const shortTime = recordDate.toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const isMobile = mobileQuery.matches;
       const rowEl = document.createElement('tr');
 
       const timeCell = document.createElement('td');
-      timeCell.textContent = recordDate.toLocaleString();
+      timeCell.dataset.fullTime = fullTime;
+      timeCell.dataset.shortTime = shortTime;
+      timeCell.textContent = isMobile ? shortTime : fullTime;
       rowEl.appendChild(timeCell);
 
       const urlCell = document.createElement('td');
@@ -1092,6 +1125,8 @@
       applyTheme(nextTheme);
     });
 
+    mobileQuery.addEventListener('change', updateTimeCellsForViewport);
+
     document.getElementById('copy-full').addEventListener('click', () => {
       copyToClipboard(fullOutput.textContent, fullStatus);
     });
@@ -1105,10 +1140,12 @@
       const records = await loadRecentLinksFromSupabase();
       if (!records.length) {
         historyBody.innerHTML = '<tr><td class="muted" colspan="3">No links generated yet.</td></tr>';
+        updateTimeCellsForViewport();
         return;
       }
       historyBody.innerHTML = '';
       records.forEach(record => addHistoryRowFromRecord(record, true));
+      updateTimeCellsForViewport();
     }
 
     initTheme();
