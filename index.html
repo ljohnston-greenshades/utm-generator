@@ -178,7 +178,13 @@
       font-size: var(--size21);
       font-weight: 700;
       margin: 16px 0 8px;
-      color: inherit;
+      color: var(--pri-acc-color);
+    }
+
+    .section-divider {
+      margin: 28px 0;
+      border: none;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
     }
 
     form {
@@ -702,6 +708,7 @@
         </div>
       </form>
 
+      <hr class="section-divider">
       <div class="section-title">Output</div>
       <div class="output-section">
         <div class="output-row">
@@ -723,6 +730,7 @@
         </div>
       </div>
 
+      <hr class="section-divider">
       <div class="section-title">Recently Generated Links</div>
       <div class="history-wrapper">
         <table aria-label="Recently generated UTM links" class="history-table" id="history-table">
